@@ -5,9 +5,9 @@ import pandas as pd
 st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
 
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
-st.write("Ingrese la capacidad de pago del cliente para evaluar todas las opciones disponibles en cada cotizador.")
+st.write("Ingrese la capacidad de pago del cliente para evaluar las mejores opciones disponibles clasificadas por marca.")
 
-# --- BASE DE DATOS EXTENDIDA DESDE MONTOS MÍNIMOS ($367.78 EN ADELANTE) ---
+# --- BASE DE DATOS ACTUALIZADA Y CORREGIDA ---
 DATA_CREDITOS = [
     # Mas Nómina (MN 4766) - Tasa Anual 31.89%, CAT 37.0%
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 60, "Pago_Mensual": 367.78, "CAT": 37.0, "Tasa_Anual": 31.89},
@@ -18,11 +18,11 @@ DATA_CREDITOS = [
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 30000.0, "Plazo_Meses": 60, "Pago_Mensual": 1103.35, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 40000.0, "Plazo_Meses": 60, "Pago_Mensual": 1471.14, "CAT": 37.0, "Tasa_Anual": 31.89},
 
-    # Consupago (CSP 3772) - Tasa Anual 28.80%, CAT 32.9%
-    {"Marca": "Consupago (CSP 3772)", "Monto": 10000.0, "Plazo_Meses": 54, "Pago_Mensual": 360.15, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Consupago (CSP 3772)", "Monto": 20000.0, "Plazo_Meses": 54, "Pago_Mensual": 720.31, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Consupago (CSP 3772)", "Monto": 30000.0, "Plazo_Meses": 54, "Pago_Mensual": 1080.46, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Consupago (CSP 3772)", "Monto": 40000.0, "Plazo_Meses": 54, "Pago_Mensual": 1440.62, "CAT": 32.9, "Tasa_Anual": 28.80},
+    # Mas Nómina (MN 3772) - Corregido a MN - Tasa Anual 28.80%, CAT 32.9%
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 10000.0, "Plazo_Meses": 54, "Pago_Mensual": 360.15, "CAT": 32.9, "Tasa_Anual": 28.80},
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 20000.0, "Plazo_Meses": 54, "Pago_Mensual": 720.31, "CAT": 32.9, "Tasa_Anual": 28.80},
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 30000.0, "Plazo_Meses": 54, "Pago_Mensual": 1080.46, "CAT": 32.9, "Tasa_Anual": 28.80},
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 40000.0, "Plazo_Meses": 54, "Pago_Mensual": 1440.62, "CAT": 32.9, "Tasa_Anual": 28.80},
 
     # Opcipres (OPC 4689) - Tasa Anual 25.68%, CAT 28.9%
     {"Marca": "Opcipres (OPC 4689)", "Monto": 15000.0, "Plazo_Meses": 60, "Pago_Mensual": 483.36, "CAT": 28.9, "Tasa_Anual": 25.68},
@@ -48,7 +48,7 @@ st.sidebar.header("Parámetros de Búsqueda")
 
 with st.sidebar.form(key="search_form"):
     capacidad_input = st.text_input("Capacidad de crédito / Descuento Máximo ($):", value="1,500.00")
-    marcas_disponibles = ["Todas", "Mas Nomina (MN 4766)", "Consupago (CSP 3772)", "Consubanco (CSB 4707)", "Opcipres (OPC 4689)"]
+    marcas_disponibles = ["Todas", "Mas Nomina (MN 4766)", "Mas Nomina (MN 3772)", "Consubanco (CSB 4707)", "Opcipres (OPC 4689)"]
     marca_seleccionada = st.selectbox("Filtrar Marca:", marcas_disponibles)
     incluir_iva = st.checkbox("Incluir IVA (16%) en Tasa Mensual", value=False)
     
@@ -75,18 +75,17 @@ if capacidad_num is not None and capacidad_num > 0:
     if df_viables.empty:
         st.warning("No se encontraron opciones de crédito que se ajusten a la capacidad ingresada.")
     else:
-        # Tasa a mostrar
         if incluir_iva:
             df_viables["Tasa_Mostrar"] = df_viables["Tasa_Mensual_Con_IVA"]
         else:
             df_viables["Tasa_Mostrar"] = df_viables["Tasa_Mensual_Sin_IVA"]
 
-        # Obtener el máximo monto alcanzado por cada Marca y Plazo
+        # Máximo monto alcanzado por cada Marca y Plazo
         idx_mejores = df_viables.groupby(["Marca", "Plazo_Meses"])["Monto"].idxmax()
         resultados = df_viables.loc[idx_mejores].copy()
 
-        # ORDENAR DE MAYOR A MENOR TASA, Y POR MAYOR MONTO
-        resultados = resultados.sort_values(by=["Tasa_Mostrar", "Monto"], ascending=[False, False])
+        # Ordenar marcas por tasa descendente y plazos descendentes
+        resultados = resultados.sort_values(by=["Tasa_Mostrar", "Plazo_Meses", "Monto"], ascending=[False, False, False])
 
         # Tabla Resumen
         resultados_display = resultados.copy()
@@ -100,35 +99,39 @@ if capacidad_num is not None and capacidad_num > 0:
         st.dataframe(resultados_display[cols_export], use_container_width=True, hide_index=True)
         
         st.markdown("---")
-        st.subheader("📌 Opciones de Crédito Disponibles")
+        st.subheader("📌 Opciones Disponibles Agrupadas por Marca")
         
-        cols = st.columns(4)
-        for idx, (_, row) in enumerate(resultados.iterrows()):
-            col_target = cols[idx % 4]
+        # AGRUPAR VISUALMENTE POR MARCA
+        for marca, group in resultados.groupby("Marca", sort=False):
+            st.markdown(f"### 🏷️ {marca}")
             
-            card_html = f"""
-            <div style="border: 1px solid #0052cc; border-radius: 8px; margin-bottom: 15px; overflow: hidden; background-color: #ffffff; font-family: sans-serif; box-shadow: 0 2px 5px rgba(0,0,0,0.08);">
-                <div style="background-color: #0052cc; color: white; padding: 10px 12px; font-weight: bold; font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>{row['Plazo_Meses']} Mensual</span>
-                    <span>Monto: ${row['Monto']:,.2f}</span>
+            cols = st.columns(min(len(group), 4))
+            for idx, (_, row) in enumerate(group.iterrows()):
+                col_target = cols[idx % 4]
+                
+                card_html = f"""
+                <div style="border: 1px solid #0052cc; border-radius: 8px; margin-bottom: 15px; overflow: hidden; background-color: #ffffff; font-family: sans-serif; box-shadow: 0 2px 5px rgba(0,0,0,0.08);">
+                    <div style="background-color: #0052cc; color: white; padding: 10px 12px; font-weight: bold; font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>{row['Plazo_Meses']} Mensual</span>
+                        <span>Monto: ${row['Monto']:,.2f}</span>
+                    </div>
+                    <div style="padding: 12px; font-size: 12px; color: #333333;">
+                        <div style="margin-bottom: 4px; font-weight: bold; color: #0052cc;">{row['Marca']}</div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: #666666;">Descuento:</span>
+                            <span style="font-weight: bold; color: #000000;">${row['Pago_Mensual']:,.2f}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: #666666;">Tasa mensual:</span>
+                            <span style="font-weight: bold; color: #000000;">{row['Tasa_Mostrar']:.2f}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #666666;">CAT:</span>
+                            <span style="font-weight: bold; color: #000000;">{row['CAT']}%</span>
+                        </div>
+                    </div>
                 </div>
-                <div style="padding: 12px; font-size: 12px; color: #333333;">
-                    <div style="margin-bottom: 4px; font-weight: bold; color: #0052cc;">{row['Marca']}</div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                        <span style="color: #666666;">Descuento:</span>
-                        <span style="font-weight: bold; color: #000000;">${row['Pago_Mensual']:,.2f}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                        <span style="color: #666666;">Tasa mensual:</span>
-                        <span style="font-weight: bold; color: #000000;">{row['Tasa_Mostrar']:.2f}%</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #666666;">CAT:</span>
-                        <span style="font-weight: bold; color: #000000;">{row['CAT']}%</span>
-                    </div>
-                </div>
-            </div>
-            """
-            col_target.markdown(card_html, unsafe_allow_html=True)
+                """
+                col_target.markdown(card_html, unsafe_allow_html=True)
 else:
     st.error("Por favor ingrese un monto de capacidad válido (ejemplo: 1500 o 1,500.00).")
