@@ -5,9 +5,9 @@ import pandas as pd
 st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
 
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
-st.write("Ingrese la capacidad de pago del cliente para consultar las ofertas disponibles en la base oficial.")
+st.write("Ingrese la capacidad de pago del cliente para consultar las ofertas disponibles de forma reactiva e inmediata.")
 
-# --- BASE DE DATOS UNIFICADA CON DATOS EXACTOS DE TABLA ---
+# --- BASE DE DATOS UNIFICADA CON TABLAS OFICIALES COMPLETAS ---
 DATA_CREDITOS = [
     # --- Mas Nómina (MN 4766) ---
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 60, "Pago_Mensual": 367.78, "CAT": 37.0, "Tasa_Anual": 31.89},
@@ -15,13 +15,19 @@ DATA_CREDITOS = [
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 36, "Pago_Mensual": 463.73, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 24, "Pago_Mensual": 595.77, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 34000.0, "Plazo_Meses": 24, "Pago_Mensual": 2025.62, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 44000.0, "Plazo_Meses": 36, "Pago_Mensual": 2040.43, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 43000.0, "Plazo_Meses": 24, "Pago_Mensual": 2561.81, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 44000.0, "Plazo_Meses": 36, "Pago_Mensual": 2040.41, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 36, "Pago_Mensual": 2573.70, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 50500.0, "Plazo_Meses": 48, "Pago_Mensual": 2029.43, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 64000.0, "Plazo_Meses": 48, "Pago_Mensual": 2571.99, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 60, "Pago_Mensual": 2041.20, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 70000.0, "Plazo_Meses": 60, "Pago_Mensual": 2574.48, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 70500.0, "Plazo_Meses": 60, "Pago_Mensual": 2592.87, "CAT": 37.0, "Tasa_Anual": 31.89},
 
     # --- Mas Nómina (MN 3772) ---
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 40000.0, "Plazo_Meses": 54, "Pago_Mensual": 1440.62, "CAT": 32.9, "Tasa_Anual": 28.80},
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 56500.0, "Plazo_Meses": 54, "Pago_Mensual": 2034.87, "CAT": 32.9, "Tasa_Anual": 28.80},
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 71500.0, "Plazo_Meses": 54, "Pago_Mensual": 2575.11, "CAT": 32.9, "Tasa_Anual": 28.80},
 
     # --- Opcipres (OPC 4689) ---
     {"Marca": "Opcipres (OPC 4689)", "Monto": 75000.0, "Plazo_Meses": 60, "Pago_Mensual": 2416.78, "CAT": 28.9, "Tasa_Anual": 25.68},
@@ -38,27 +44,13 @@ df_base = pd.DataFrame(DATA_CREDITOS)
 df_base["Tasa_Mensual_Sin_IVA"] = df_base["Tasa_Anual"] / 12.0
 df_base["Tasa_Mensual_Con_IVA"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
 
-# --- MANEJO DE ESTADO PARA BÚSQUEDA FLUIDA ---
-if "capacidad_guardada" not in st.session_state:
-    st.session_state["capacidad_guardada"] = "2,591.79"
-
+# --- CONTROLES EN SIDEBAR (SIN ST.FORM PARA EJECUCIÓN DIRECTA) ---
 st.sidebar.header("Parámetros de Búsqueda")
 
-with st.sidebar.form(key="search_form", clear_on_submit=False):
-    capacidad_input = st.text_input(
-        "Capacidad de crédito / Descuento Máximo ($):", 
-        value=st.session_state["capacidad_guardada"]
-    )
-    
-    marcas_disponibles = ["Todas"] + list(df_base["Marca"].unique())
-    marca_seleccionada = st.selectbox("Filtrar Marca:", marcas_disponibles)
-    incluir_iva = st.checkbox("Incluir IVA (16%) en Tasa Mensual", value=False)
-    
-    submit_button = st.form_submit_button(label="🔍 Calcular Oferta", use_container_width=True)
-
-# Actualizar el estado de búsqueda al presionar Enter o dar clic en Calcular
-if submit_button:
-    st.session_state["capacidad_guardada"] = capacidad_input
+capacidad_input = st.sidebar.text_input("Capacidad de crédito / Descuento Máximo ($):", value="2,591.79")
+marcas_disponibles = ["Todas"] + list(df_base["Marca"].unique())
+marca_seleccionada = st.sidebar.selectbox("Filtrar Marca:", marcas_disponibles)
+incluir_iva = st.sidebar.checkbox("Incluir IVA (16%) en Tasa Mensual", value=False)
 
 def parse_monto(val_str):
     try:
@@ -67,9 +59,9 @@ def parse_monto(val_str):
     except ValueError:
         return None
 
-capacidad_num = parse_monto(st.session_state["capacidad_guardada"])
+capacidad_num = parse_monto(capacidad_input)
 
-# --- RENDEREADO DE RESULTADOS ---
+# --- EJECUCIÓN DIRECTA Y FILTRADO ---
 if capacidad_num is not None and capacidad_num > 0:
     st.subheader(f"Resultados para capacidad de pago máxima: **${capacidad_num:,.2f} mensuales**")
     
@@ -83,6 +75,7 @@ if capacidad_num is not None and capacidad_num > 0:
     else:
         df_viables["Tasa_Mostrar"] = df_viables["Tasa_Mensual_Con_IVA"] if incluir_iva else df_viables["Tasa_Mensual_Sin_IVA"]
 
+        # Obtener el monto máximo exacto disponible por cada Marca y Plazo
         idx_mejores = df_viables.groupby(["Marca", "Plazo_Meses"])["Monto"].idxmax()
         resultados = df_viables.loc[idx_mejores].copy()
 
