@@ -1,74 +1,94 @@
 import streamlit as st
 import pandas as pd
+import math
 
 # Configuración de página
 st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
 
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
-st.write("Ingrese la capacidad de pago del cliente para evaluar las mejores opciones disponibles clasificadas por marca.")
+st.write("Ingrese la capacidad de pago del cliente para evaluar las opciones exactas disponibles clasificadas por marca.")
 
-# --- GENERADOR DINÁMICO EXTENDIDO HASTA $1,000,000 ---
-@st.cache_data
-def generar_base_datos():
-    registros = []
+# --- PARÁMETROS FINANCIEROS Y FACTORES EXACTOS POR MATERIAL Y PLAZO ---
+MATRICULA_COTIZADORES = {
+    "Mas Nomina (MN 4766)": {
+        "CAT": 37.0,
+        "Tasa_Anual": 31.89,
+        "Plazos": {
+            60: 36.7777,
+            48: 40.1867,
+            36: 46.3728,
+            24: 59.5768
+        }
+    },
+    "Mas Nomina (MN 3772)": {
+        "CAT": 32.9,
+        "Tasa_Anual": 28.80,
+        "Plazos": {
+            54: 36.0155
+        }
+    },
+    "Opcipres (OPC 4689)": {
+        "CAT": 28.9,
+        "Tasa_Anual": 25.68,
+        "Plazos": {
+            60: 32.2237,
+            48: 35.6248,
+            36: 39.6665,
+            24: 48.3331
+        }
+    },
+    "Consubanco (CSB 4707)": {
+        "CAT": 26.7,
+        "Tasa_Anual": 23.88,
+        "Plazos": {
+            60: 30.9556,
+            48: 34.3750,
+            36: 38.5000,
+            24: 47.2000
+        }
+    }
+}
+
+# --- CÁLCULO DINÁMICO EXACTO BASADO EN CAPACIDAD ---
+def calcular_oferta_exacta(capacidad_pago, marca_filtro, incluir_iva):
+    resultados = []
     
-    # 1. Mas Nómina (MN 4766) - Plazos: 60, 48, 36, 24 meses
-    factores_mn4766 = {60: 36.778, 48: 40.187, 36: 46.373, 24: 59.577}
-    for monto in range(5000, 1000500, 500):
-        for plazo, factor in factores_mn4766.items():
-            registros.append({
-                "Marca": "Mas Nomina (MN 4766)",
-                "Monto": float(monto),
-                "Plazo_Meses": plazo,
-                "Pago_Mensual": round((monto / 1000.0) * factor, 2),
-                "CAT": 37.0,
-                "Tasa_Anual": 31.89
-            })
-
-    # 2. Mas Nómina (MN 3772) - Plazo: 54 meses
-    for monto in range(5000, 1000500, 500):
-        registros.append({
-            "Marca": "Mas Nomina (MN 3772)",
-            "Monto": float(monto),
-            "Plazo_Meses": 54,
-            "Pago_Mensual": round((monto / 1000.0) * 36.015, 2),
-            "CAT": 32.9,
-            "Tasa_Anual": 28.80
-        })
-
-    # 3. Opcipres (OPC 4689) - Plazos: 60, 48, 36, 24 meses
-    factores_opc = {60: 32.2238, 48: 35.625, 36: 39.667, 24: 48.333}
-    for monto in range(5000, 1000500, 500):
-        for plazo, factor in factores_opc.items():
-            registros.append({
-                "Marca": "Opcipres (OPC 4689)",
-                "Monto": float(monto),
-                "Plazo_Meses": plazo,
-                "Pago_Mensual": round((monto / 1000.0) * factor, 2),
-                "CAT": 28.9,
-                "Tasa_Anual": 25.68
-            })
-
-    # 4. Consubanco (CSB 4707) - Plazos: 60, 48, 36, 24 meses
-    factores_csb = {60: 30.993256, 48: 34.375, 36: 38.500, 24: 47.200}
-    for monto in range(5000, 1000500, 500):
-        for plazo, factor in factores_csb.items():
-            registros.append({
-                "Marca": "Consubanco (CSB 4707)",
-                "Monto": float(monto),
-                "Plazo_Meses": plazo,
-                "Pago_Mensual": round((monto / 1000.0) * factor, 2),
-                "CAT": 26.7,
-                "Tasa_Anual": 23.88
-            })
+    for marca, info in MATRICULA_COTIZADORES.items():
+        if marca_filtro != "Todas" and marca != marca_filtro:
+            continue
             
-    return pd.DataFrame(registros)
-
-df_base = generar_base_datos()
-
-# --- CÁLCULO DE TASAS MENSUALES ---
-df_base["Tasa_Mensual_Sin_IVA"] = df_base["Tasa_Anual"] / 12.0
-df_base["Tasa_Mensual_Con_IVA"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
+        cat = info["CAT"]
+        tasa_anual = info["Tasa_Anual"]
+        tasa_mensual = (tasa_anual * 1.16 / 12.0) if incluir_iva else (tasa_anual / 12.0)
+        
+        for plazo, factor in info["Plazos"].items():
+            # Obtener el monto máximo ajustado en múltiplos de $500
+            monto_bruto = (capacidad_pago / factor) * 1000.0
+            monto_escalonado = math.floor(monto_bruto / 500.0) * 500.0
+            
+            if monto_escalonado >= 5000.0:
+                if monto_escalonado > 1000000.0:
+                    monto_escalonado = 1000000.0
+                
+                # Pago mensual exacto
+                pago_exacto = round((monto_escalonado / 1000.0) * factor, 2)
+                
+                # Ajuste de seguridad si el redondeo sobrepasa por centavos la capacidad
+                if pago_exacto > capacidad_pago and monto_escalonado >= 5500.0:
+                    monto_escalonado -= 500.0
+                    pago_exacto = round((monto_escalonado / 1000.0) * factor, 2)
+                
+                resultados.append({
+                    "Marca": marca,
+                    "Monto": monto_escalonado,
+                    "Plazo_Meses": plazo,
+                    "Pago_Mensual": pago_exacto,
+                    "CAT": cat,
+                    "Tasa_Anual": tasa_anual,
+                    "Tasa_Mostrar": tasa_mensual
+                })
+                
+    return pd.DataFrame(resultados)
 
 # --- PANEL LATERAL ---
 st.sidebar.header("Parámetros de Búsqueda")
@@ -93,26 +113,13 @@ capacidad_num = parse_monto(capacidad_input)
 if capacidad_num is not None and capacidad_num > 0:
     st.subheader(f"Resultados para capacidad de pago máxima: **${capacidad_num:,.2f} mensuales**")
     
-    # Filtrar créditos por capacidad
-    df_viables = df_base[df_base["Pago_Mensual"] <= capacidad_num].copy()
+    df_resultados = calcular_oferta_exacta(capacidad_num, marca_seleccionada, incluir_iva)
     
-    if marca_seleccionada != "Todas":
-        df_viables = df_viables[df_viables["Marca"] == marca_seleccionada]
-        
-    if df_viables.empty:
+    if df_resultados.empty:
         st.warning("No se encontraron opciones de crédito que se ajusten a la capacidad ingresada.")
     else:
-        if incluir_iva:
-            df_viables["Tasa_Mostrar"] = df_viables["Tasa_Mensual_Con_IVA"]
-        else:
-            df_viables["Tasa_Mostrar"] = df_viables["Tasa_Mensual_Sin_IVA"]
-
-        # Obtener el MÁXIMO MONTO financiable para cada Marca y Plazo dentro del presupuesto
-        idx_mejores = df_viables.groupby(["Marca", "Plazo_Meses"])["Monto"].idxmax()
-        resultados = df_viables.loc[idx_mejores].copy()
-
         # Ordenar marcas por Tasa descendente y plazos descendentes
-        resultados = resultados.sort_values(by=["Tasa_Mostrar", "Plazo_Meses", "Monto"], ascending=[False, False, False])
+        resultados = df_resultados.sort_values(by=["Tasa_Mostrar", "Plazo_Meses", "Monto"], ascending=[False, False, False])
 
         # Tabla Resumen
         resultados_display = resultados.copy()
