@@ -5,11 +5,10 @@ import pandas as pd
 st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
 
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
-st.write("Consulta exacta de ofertas basada en las tablas oficiales del PDF sin fórmulas de cálculo.")
+st.write("Consulta exacta de ofertas extraídas directamente de los PDF oficiales sin variaciones de centavos.")
 
 # ==============================================================================
-# MATRIZ INTEGRAL DE BÚSQUEDA EXACTA (PUNTO ÚNICO DE VERDAD OFICIAL)
-# Carga directa de la tabla de amortización aprobada legalmente para cada marca.
+# BASE DE DATOS EXACTA Y REVISADA CONTRA HOJAS IMPRESAS OFICIALES
 # ==============================================================================
 DATA_CREDITOS = [
     # --------------------------------------------------------------------------
@@ -50,7 +49,7 @@ DATA_CREDITOS = [
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 30000.0, "Plazo_Meses": 54, "Pago_Mensual": 1080.46, "CAT": 32.9, "Tasa_Anual": 28.80},
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 40000.0, "Plazo_Meses": 54, "Pago_Mensual": 1440.62, "CAT": 32.9, "Tasa_Anual": 28.80},
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 56500.0, "Plazo_Meses": 54, "Pago_Mensual": 2034.87, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 71500.0, "Plazo_Meses": 54, "Pago_Mensual": 2575.11, "CAT": 32.9, "Tasa_Anual": 28.80},
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 71500.0, "Plazo_Meses": 54, "Pago_Mensual": 2575.10, "CAT": 32.9, "Tasa_Anual": 28.80},  # <--- Corregido exacto a la imagen del PDF
 
     # --------------------------------------------------------------------------
     # 3. OPCIPRES (OPC 4689) - Tasa Anual 25.68%, CAT 28.9%
@@ -84,17 +83,15 @@ def parse_monto(val_str):
 
 capacidad_num = parse_monto(capacidad_input)
 
-# Cálculo de tasa mensual únicamente dividiendo la tasa anual entre 12
+# La tasa mensual se obtiene estrictamente dividiendo la tasa anual entre 12
 if incluir_iva:
     df_base["Tasa_Mostrar"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
 else:
     df_base["Tasa_Mostrar"] = df_base["Tasa_Anual"] / 12.0
 
-# --- LÓGICA DE FILTRADO OFICIAL Y DESPLIEGUE ---
 if capacidad_num is not None and capacidad_num > 0:
     st.subheader(f"Resultados para capacidad de pago máxima: **${capacidad_num:,.2f} mensuales**")
     
-    # Filtrar solo mensualidades que no superen la capacidad ingresada
     df_viables = df_base[df_base["Pago_Mensual"] <= capacidad_num].copy()
     
     if marca_seleccionada != "Todas":
@@ -103,7 +100,6 @@ if capacidad_num is not None and capacidad_num > 0:
     if df_viables.empty:
         st.warning("⚠️ No aplican créditos para la capacidad ingresada.")
     else:
-        # Extraer el máximo monto financiable registrado para cada Marca y Plazo
         idx_mejores = df_viables.groupby(["Marca", "Plazo_Meses"])["Monto"].idxmax()
         resultados = df_viables.loc[idx_mejores].copy()
 
