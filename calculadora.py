@@ -1,50 +1,76 @@
 import streamlit as st
 import pandas as pd
 
-# Configuración de página
+# Configuración de la página
 st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
 
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
-st.write("Ingrese la capacidad de pago del cliente para consultar las ofertas disponibles de forma reactiva e inmediata.")
+st.write("Consulta exacta de ofertas oficiales. La tasa mensual se obtiene dividiendo la tasa anual entre 12.")
 
-# --- BASE DE DATOS UNIFICADA CON TABLAS OFICIALES COMPLETAS ---
+# ==============================================================================
+# BASE DE DATOS ESTRUCTURADA 100% FIEL A LOS PDF OFICIALES
+# ==============================================================================
 DATA_CREDITOS = [
-    # --- Mas Nómina (MN 4766) ---
+    # --------------------------------------------------------------------------
+    # 1. MAS NÓMINA (MN 4766) - Tasa Anual 31.89%, CAT 37.0%
+    # --------------------------------------------------------------------------
+    # Plazo 60 Meses
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 60, "Pago_Mensual": 367.78, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 48, "Pago_Mensual": 401.87, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 36, "Pago_Mensual": 463.73, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 24, "Pago_Mensual": 595.77, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 34000.0, "Plazo_Meses": 24, "Pago_Mensual": 2025.62, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 43000.0, "Plazo_Meses": 24, "Pago_Mensual": 2561.81, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 44000.0, "Plazo_Meses": 36, "Pago_Mensual": 2040.41, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 36, "Pago_Mensual": 2573.70, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 50500.0, "Plazo_Meses": 48, "Pago_Mensual": 2029.43, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 64000.0, "Plazo_Meses": 48, "Pago_Mensual": 2571.99, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 20000.0, "Plazo_Meses": 60, "Pago_Mensual": 735.57, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 30000.0, "Plazo_Meses": 60, "Pago_Mensual": 1103.35, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 40000.0, "Plazo_Meses": 60, "Pago_Mensual": 1471.14, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 50000.0, "Plazo_Meses": 60, "Pago_Mensual": 1838.92, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 60, "Pago_Mensual": 2041.20, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 70000.0, "Plazo_Meses": 60, "Pago_Mensual": 2574.48, "CAT": 37.0, "Tasa_Anual": 31.89},
     {"Marca": "Mas Nomina (MN 4766)", "Monto": 70500.0, "Plazo_Meses": 60, "Pago_Mensual": 2592.87, "CAT": 37.0, "Tasa_Anual": 31.89},
 
-    # --- Mas Nómina (MN 3772) ---
+    # Plazo 48 Meses
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 48, "Pago_Mensual": 401.87, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 50500.0, "Plazo_Meses": 48, "Pago_Mensual": 2029.43, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 64000.0, "Plazo_Meses": 48, "Pago_Mensual": 2571.99, "CAT": 37.0, "Tasa_Anual": 31.89},
+
+    # Plazo 36 Meses
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 36, "Pago_Mensual": 463.73, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 44000.0, "Plazo_Meses": 36, "Pago_Mensual": 2040.41, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 36, "Pago_Mensual": 2573.70, "CAT": 37.0, "Tasa_Anual": 31.89},
+
+    # Plazo 24 Meses
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 24, "Pago_Mensual": 595.77, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 34000.0, "Plazo_Meses": 24, "Pago_Mensual": 2025.62, "CAT": 37.0, "Tasa_Anual": 31.89},
+    {"Marca": "Mas Nomina (MN 4766)", "Monto": 43000.0, "Plazo_Meses": 24, "Pago_Mensual": 2561.81, "CAT": 37.0, "Tasa_Anual": 31.89},
+
+    # --------------------------------------------------------------------------
+    # 2. MAS NÓMINA (MN 3772) - Tasa Anual 28.80%, CAT 32.9%
+    # --------------------------------------------------------------------------
+    # Plazo 54 Meses
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 10000.0, "Plazo_Meses": 54, "Pago_Mensual": 360.15, "CAT": 32.9, "Tasa_Anual": 28.80},
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 20000.0, "Plazo_Meses": 54, "Pago_Mensual": 720.31, "CAT": 32.9, "Tasa_Anual": 28.80},
+    {"Marca": "Mas Nomina (MN 3772)", "Monto": 30000.0, "Plazo_Meses": 54, "Pago_Mensual": 1080.46, "CAT": 32.9, "Tasa_Anual": 28.80},
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 40000.0, "Plazo_Meses": 54, "Pago_Mensual": 1440.62, "CAT": 32.9, "Tasa_Anual": 28.80},
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 56500.0, "Plazo_Meses": 54, "Pago_Mensual": 2034.87, "CAT": 32.9, "Tasa_Anual": 28.80},
     {"Marca": "Mas Nomina (MN 3772)", "Monto": 71500.0, "Plazo_Meses": 54, "Pago_Mensual": 2575.11, "CAT": 32.9, "Tasa_Anual": 28.80},
 
-    # --- Opcipres (OPC 4689) ---
+    # --------------------------------------------------------------------------
+    # 3. OPCIPRES (OPC 4689) - Tasa Anual 25.68%, CAT 28.9%
+    # --------------------------------------------------------------------------
+    # Plazo 60 Meses (Mínimo de tabla oficial: $75,000.00)
     {"Marca": "Opcipres (OPC 4689)", "Monto": 75000.0, "Plazo_Meses": 60, "Pago_Mensual": 2416.78, "CAT": 28.9, "Tasa_Anual": 25.68},
     {"Marca": "Opcipres (OPC 4689)", "Monto": 80000.0, "Plazo_Meses": 60, "Pago_Mensual": 2577.90, "CAT": 28.9, "Tasa_Anual": 25.68},
+    {"Marca": "Opcipres (OPC 4689)", "Monto": 100000.0, "Plazo_Meses": 60, "Pago_Mensual": 3222.37, "CAT": 28.9, "Tasa_Anual": 25.68},
 
-    # --- Consubanco (CSB 4707) ---
+    # --------------------------------------------------------------------------
+    # 4. CONSUBANCO (CSB 4707) - Tasa Anual 23.88%, CAT 26.7%
+    # --------------------------------------------------------------------------
+    # Plazo 60 Meses (Mínimo de tabla oficial: $150,000.00)
     {"Marca": "Consubanco (CSB 4707)", "Monto": 150000.0, "Plazo_Meses": 60, "Pago_Mensual": 4643.34, "CAT": 26.7, "Tasa_Anual": 23.88},
     {"Marca": "Consubanco (CSB 4707)", "Monto": 160000.0, "Plazo_Meses": 60, "Pago_Mensual": 4952.89, "CAT": 26.7, "Tasa_Anual": 23.88},
 ]
 
 df_base = pd.DataFrame(DATA_CREDITOS)
 
-# Tasas de despliegue
-df_base["Tasa_Mensual_Sin_IVA"] = df_base["Tasa_Anual"] / 12.0
-df_base["Tasa_Mensual_Con_IVA"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
-
-# --- CONTROLES EN SIDEBAR (SIN ST.FORM PARA EJECUCIÓN DIRECTA) ---
+# ==============================================================================
+# CONTROLES LATERALES REACTIVOS (SIN ST.FORM)
+# ==============================================================================
 st.sidebar.header("Parámetros de Búsqueda")
 
 capacidad_input = st.sidebar.text_input("Capacidad de crédito / Descuento Máximo ($):", value="2,591.79")
@@ -61,24 +87,32 @@ def parse_monto(val_str):
 
 capacidad_num = parse_monto(capacidad_input)
 
-# --- EJECUCIÓN DIRECTA Y FILTRADO ---
+# --- CÁLCULO DE TASA MENSUAL ESTRICATAMENTE COMO (TASA_ANUAL / 12) ---
+if incluir_iva:
+    df_base["Tasa_Mostrar"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
+else:
+    df_base["Tasa_Mostrar"] = df_base["Tasa_Anual"] / 12.0
+
+# ==============================================================================
+# PROCESAMIENTO Y MUESTRA DE OFERTAS QUE SÍ APLICAN
+# ==============================================================================
 if capacidad_num is not None and capacidad_num > 0:
     st.subheader(f"Resultados para capacidad de pago máxima: **${capacidad_num:,.2f} mensuales**")
     
+    # Filtrar solo créditos cuya mensualidad sea igual o menor a la capacidad
     df_viables = df_base[df_base["Pago_Mensual"] <= capacidad_num].copy()
     
     if marca_seleccionada != "Todas":
         df_viables = df_viables[df_viables["Marca"] == marca_seleccionada]
         
     if df_viables.empty:
-        st.warning("⚠️ No aplican créditos para la capacidad ingresada (el monto de capacidad es inferior al pago mínimo requerido por los cotizadores).")
+        st.warning("⚠️ No aplican créditos para la capacidad ingresada (el monto ingresado es inferior al pago mínimo solicitado por las tablas oficiales).")
     else:
-        df_viables["Tasa_Mostrar"] = df_viables["Tasa_Mensual_Con_IVA"] if incluir_iva else df_viables["Tasa_Mensual_Sin_IVA"]
-
-        # Obtener el monto máximo exacto disponible por cada Marca y Plazo
+        # Extraer únicamente el máximo monto financiable por Marca y Plazo alcanzado
         idx_mejores = df_viables.groupby(["Marca", "Plazo_Meses"])["Monto"].idxmax()
         resultados = df_viables.loc[idx_mejores].copy()
 
+        # Ordenar por Tasa (descendente), Plazo (descendente) y Monto
         resultados = resultados.sort_values(by=["Tasa_Mostrar", "Plazo_Meses", "Monto"], ascending=[False, False, False])
 
         # Tabla Resumen
@@ -95,6 +129,7 @@ if capacidad_num is not None and capacidad_num > 0:
         st.markdown("---")
         st.subheader("📌 Opciones Disponibles Agrupadas por Marca")
         
+        # Generar tarjetas por marca que califique
         for marca, group in resultados.groupby("Marca", sort=False):
             st.markdown(f"### 🏷️ {marca}")
             
