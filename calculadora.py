@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 
 # Configuración de página
 st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
@@ -8,7 +9,7 @@ st.title("📊 Cotizador y Buscador de Crédito Multimarca")
 st.write("Consulta exacta de ofertas extraídas directamente de los PDF oficiales sin variaciones de centavos.")
 
 # ==============================================================================
-# BASE DE DATOS EXACTA (SIN NINGÚN CAMBIO EN LOS REGISTROS)
+# BASE DE DATOS EXACTA (DATOS ESTÁTICOS OFICIALES)
 # ==============================================================================
 DATA_CREDITOS = [
     # --------------------------------------------------------------------------
@@ -62,58 +63,58 @@ DATA_CREDITOS = [
 
 df_base = pd.DataFrame(DATA_CREDITOS)
 
-# --- CONTROLES LATERALES REACTIVOS (SINCRO DIRECTA) ---
+# --- PANEL LATERAL REACTIVO ---
 st.sidebar.header("Parámetros de Búsqueda")
 
-# Entrada directa sin formularios que bloqueen el refresco
 capacidad_input = st.sidebar.text_input(
     "Capacidad de crédito / Descuento Máximo ($):", 
-    value="2,591.79",
-    key="input_capacidad"
+    value="2591.79",
+    key="txt_capacidad_input"
 )
 
 marcas_disponibles = ["Todas"] + list(df_base["Marca"].unique())
-marca_seleccionada = st.sidebar.selectbox("Filtrar Marca:", marcas_disponibles, key="input_marca")
-incluir_iva = st.sidebar.checkbox("Incluir IVA (16%) en Tasa Mensual", value=False, key="input_iva")
+marca_seleccionada = st.sidebar.selectbox("Filtrar Marca:", marcas_disponibles, key="select_marca_input")
+incluir_iva = st.sidebar.checkbox("Incluir IVA (16%) en Tasa Mensual", value=False, key="chk_iva_input")
 
-# Función de conversión tolerante a formatos con comas, espacios y símbolos
-def parse_monto(val_str):
+# PARSER ULTRA TOLERANTE CON EXPRESIONES REGULARES
+def parse_monto_limpio(val_str):
     if not val_str:
         return None
+    # Elimina todo lo que no sea dígito o punto decimal
+    limpio = re.sub(r"[^\d.]", "", str(val_str))
     try:
-        cleaned = str(val_str).replace("$", "").replace(",", "").strip()
-        return float(cleaned)
-    except (ValueError, TypeError):
+        val = float(limpio)
+        return val if val > 0 else None
+    except ValueError:
         return None
 
-capacidad_num = parse_monto(capacidad_input)
+capacidad_num = parse_monto_limpio(capacidad_input)
 
-# Tasa mensual informativa (Tasa anual / 12)
+# Tasa mensual informativa
 if incluir_iva:
     df_base["Tasa_Mostrar"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
 else:
     df_base["Tasa_Mostrar"] = df_base["Tasa_Anual"] / 12.0
 
 # ==============================================================================
-# EJECUCIÓN INMEDIATA DE BÚSQUEDA
+# EJECUCIÓN DIRECTA DEL FILTRADO
 # ==============================================================================
-if capacidad_num is not None and capacidad_num > 0:
+if capacidad_num is not None:
     st.subheader(f"Resultados para capacidad de pago máxima: **${capacidad_num:,.2f} mensuales**")
     
-    # Búsqueda exacta de registros válidos
+    # Filtrar solo montos cuyo pago mensual impreso sea menor o igual a la capacidad
     df_viables = df_base[df_base["Pago_Mensual"] <= capacidad_num].copy()
     
     if marca_seleccionada != "Todas":
         df_viables = df_viables[df_viables["Marca"] == marca_seleccionada]
         
     if df_viables.empty:
-        st.warning("⚠️ No aplican créditos para la capacidad ingresada.")
+        st.warning("⚠️ No aplican créditos para la capacidad ingresada (el monto ingresado es inferior al pago mínimo solicitado por las tablas oficiales).")
     else:
-        # Obtener el mayor monto disponible para cada Marca y Plazo alcanzado
+        # Obtener la fila del MÁXIMO MONTO financiable para cada Marca y Plazo alcanzado
         idx_mejores = df_viables.groupby(["Marca", "Plazo_Meses"])["Monto"].idxmax()
         resultados = df_viables.loc[idx_mejores].copy()
 
-        # Ordenar resultados de forma descendente
         resultados = resultados.sort_values(by=["Tasa_Mostrar", "Plazo_Meses", "Monto"], ascending=[False, False, False])
 
         # Tabla Resumen
@@ -130,7 +131,6 @@ if capacidad_num is not None and capacidad_num > 0:
         st.markdown("---")
         st.subheader("📌 Opciones Disponibles Agrupadas por Marca")
         
-        # Generar tarjetas organizadas por marca
         for marca, group in resultados.groupby("Marca", sort=False):
             st.markdown(f"### 🏷️ {marca}")
             
@@ -163,4 +163,4 @@ if capacidad_num is not None and capacidad_num > 0:
                 """
                 col_target.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.error("Por favor ingrese un monto de capacidad válido (ejemplo: 2,591.79 o 2591.79).")
+    st.error("Por favor ingrese un monto de capacidad válido (ejemplo: 2591.79 o 2,591.79).")
