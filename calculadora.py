@@ -7,8 +7,7 @@ st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
 st.write("Ingrese la capacidad de pago del cliente para evaluar las mejores opciones disponibles en cada marca.")
 
-# --- BASE DE DATOS DE EJEMPLO DE TABLAS DE AMORTIZACIÓN ---
-# Nota: Puede extender esta lista con la totalidad de registros de sus archivos CSV/PDF.
+# --- BASE DE DATOS DE TABLAS DE AMORTIZACIÓN ---
 DATA_CREDITOS = [
     # CSB (Consubanco IMSS) - Basado en imss csb 4707.pdf
     {"Marca": "Consubanco (CSB)", "Monto": 150000.0, "Plazo_Meses": 60, "Pago_Quincenal": 4643.34, "CAT": 26.7, "Tasa": 23.88},
@@ -26,12 +25,12 @@ DATA_CREDITOS = [
     {"Marca": "Opcipres (OPC)", "Monto": 110000.0, "Plazo_Meses": 60, "Pago_Quincenal": 3544.62, "CAT": 28.9, "Tasa": 25.68},
     {"Marca": "Opcipres (OPC)", "Monto": 150000.0, "Plazo_Meses": 60, "Pago_Quincenal": 4833.57, "CAT": 28.9, "Tasa": 25.68},
     
-    # Mas Nómina (MN) - Datos esquemáticos
+    # Mas Nómina (MN)
     {"Marca": "Mas Nomina (MN)", "Monto": 50000.0, "Plazo_Meses": 48, "Pago_Quincenal": 1800.00, "CAT": 29.5, "Tasa": 26.00},
     {"Marca": "Mas Nomina (MN)", "Monto": 80000.0, "Plazo_Meses": 60, "Pago_Quincenal": 2700.00, "CAT": 28.0, "Tasa": 25.00},
     {"Marca": "Mas Nomina (MN)", "Monto": 100000.0, "Plazo_Meses": 60, "Pago_Quincenal": 3350.00, "CAT": 28.0, "Tasa": 25.00},
     
-    # Consupago (CSP) - Datos esquemáticos
+    # Consupago (CSP)
     {"Marca": "Consupago (CSP)", "Monto": 60000.0, "Plazo_Meses": 48, "Pago_Quincenal": 2100.00, "CAT": 30.1, "Tasa": 27.00},
     {"Marca": "Consupago (CSP)", "Monto": 90000.0, "Plazo_Meses": 60, "Pago_Quincenal": 2950.00, "CAT": 28.5, "Tasa": 25.50},
     {"Marca": "Consupago (CSP)", "Monto": 110000.0, "Plazo_Meses": 60, "Pago_Quincenal": 3490.00, "CAT": 28.5, "Tasa": 25.50},
@@ -45,13 +44,13 @@ st.sidebar.header("Parámetros de Búsqueda")
 # Entrada flexible de texto para permitir comas o puntos
 capacidad_input = st.sidebar.text_input("Capacidad de crédito / Descuento Máximo ($):", value="3,500.00")
 
-# Selección opcional de marcas especificas
+# Selección opcional de marcas específicas
 marcas_disponibles = ["Todas", "Mas Nomina (MN)", "Consupago (CSP)", "Consubanco (CSB)", "Opcipres (OPC)"]
 marca_seleccionada = st.sidebar.selectbox("Filtrar Marca:", marcas_disponibles)
 
 # Limpieza y conversión del monto de capacidad
 def parse_monto(val_str):
-    try climate:
+    try:
         cleaned = val_str.replace("$", "").replace(",", "").strip()
         return float(cleaned)
     except ValueError:
