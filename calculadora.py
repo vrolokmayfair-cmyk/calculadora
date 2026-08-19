@@ -7,14 +7,14 @@ st.set_page_config(page_title="Cotizador Multimarca de Crédito", layout="wide")
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
 st.write("Ingrese la capacidad de pago del cliente para evaluar las mejores opciones disponibles clasificadas por marca.")
 
-# --- GENERADOR DINÁMICO DE TABLAS DE AMORTIZACIÓN ---
+# --- GENERADOR DINÁMICO EXTENDIDO HASTA $1,000,000 ---
 @st.cache_data
 def generar_base_datos():
     registros = []
     
     # 1. Mas Nómina (MN 4766) - Plazos: 60, 48, 36, 24 meses
     factores_mn4766 = {60: 36.778, 48: 40.187, 36: 46.373, 24: 59.577}
-    for monto in range(5000, 200500, 500):
+    for monto in range(5000, 1000500, 500):
         for plazo, factor in factores_mn4766.items():
             registros.append({
                 "Marca": "Mas Nomina (MN 4766)",
@@ -26,7 +26,7 @@ def generar_base_datos():
             })
 
     # 2. Mas Nómina (MN 3772) - Plazo: 54 meses
-    for monto in range(5000, 200500, 500):
+    for monto in range(5000, 1000500, 500):
         registros.append({
             "Marca": "Mas Nomina (MN 3772)",
             "Monto": float(monto),
@@ -38,7 +38,7 @@ def generar_base_datos():
 
     # 3. Opcipres (OPC 4689) - Plazos: 60, 48, 36, 24 meses
     factores_opc = {60: 32.2238, 48: 35.625, 36: 39.667, 24: 48.333}
-    for monto in range(5000, 200500, 500):
+    for monto in range(5000, 1000500, 500):
         for plazo, factor in factores_opc.items():
             registros.append({
                 "Marca": "Opcipres (OPC 4689)",
@@ -50,8 +50,8 @@ def generar_base_datos():
             })
 
     # 4. Consubanco (CSB 4707) - Plazos: 60, 48, 36, 24 meses
-    factores_csb = {60: 30.9556, 48: 34.375, 36: 38.500, 24: 47.200}
-    for monto in range(5000, 200500, 500):
+    factores_csb = {60: 30.993256, 48: 34.375, 36: 38.500, 24: 47.200}
+    for monto in range(5000, 1000500, 500):
         for plazo, factor in factores_csb.items():
             registros.append({
                 "Marca": "Consubanco (CSB 4707)",
@@ -74,7 +74,7 @@ df_base["Tasa_Mensual_Con_IVA"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
 st.sidebar.header("Parámetros de Búsqueda")
 
 with st.sidebar.form(key="search_form"):
-    capacidad_input = st.text_input("Capacidad de crédito / Descuento Máximo ($):", value="2,000.00")
+    capacidad_input = st.text_input("Capacidad de crédito / Descuento Máximo ($):", value="10,801.15")
     marcas_disponibles = ["Todas", "Mas Nomina (MN 4766)", "Mas Nomina (MN 3772)", "Consubanco (CSB 4707)", "Opcipres (OPC 4689)"]
     marca_seleccionada = st.selectbox("Filtrar Marca:", marcas_disponibles)
     incluir_iva = st.checkbox("Incluir IVA (16%) en Tasa Mensual", value=False)
@@ -161,4 +161,4 @@ if capacidad_num is not None and capacidad_num > 0:
                 """
                 col_target.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.error("Por favor ingrese un monto de capacidad válido (ejemplo: 2000 o 2,000.00).")
+    st.error("Por favor ingrese un monto de capacidad válido (ejemplo: 10801.15).")
