@@ -1,98 +1,117 @@
 import streamlit as st
 import pandas as pd
+import pdfplumber
+import requests
+import io
 import re
 
 # Configuración de página
 st.set_page_config(page_title="Cotizador y Buscador de Crédito Multimarca", layout="wide")
 
 st.title("📊 Cotizador y Buscador de Crédito Multimarca")
-st.write("Herramienta de filtro y consulta directa sobre la base de datos oficial. Sin modificaciones a las tablas impresas.")
+st.write("Consulta y filtrado directo desde los documentos PDF oficiales alojados en Google Drive.")
 
 # ==============================================================================
-# TABLA DE DATOS OFICIAL (MATRIZ EXTRAÍDA TAL CUAL VIENE EN LOS PDF)
+# ENLACES DIRECTOS A LOS DOCUMENTOS PDF EN GOOGLE DRIVE
 # ==============================================================================
-DATA_CREDITOS = [
-    # --------------------------------------------------------------------------
-    # MAS NÓMINA (MN 4766) - Tasa Anual 31.89%, CAT 37.0%
-    # --------------------------------------------------------------------------
-    # Plazo 60 Meses
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 60, "Pago_Mensual": 367.78, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 20000.0, "Plazo_Meses": 60, "Pago_Mensual": 735.57, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 30000.0, "Plazo_Meses": 60, "Pago_Mensual": 1103.35, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 40000.0, "Plazo_Meses": 60, "Pago_Mensual": 1471.14, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 50000.0, "Plazo_Meses": 60, "Pago_Mensual": 1838.92, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 60, "Pago_Mensual": 2041.20, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 70000.0, "Plazo_Meses": 60, "Pago_Mensual": 2574.48, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 70500.0, "Plazo_Meses": 60, "Pago_Mensual": 2592.87, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 81500.0, "Plazo_Meses": 60, "Pago_Mensual": 2997.43, "CAT": 37.0, "Tasa_Anual": 31.89},
-
-    # Plazo 48 Meses
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 48, "Pago_Mensual": 401.87, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 50500.0, "Plazo_Meses": 48, "Pago_Mensual": 2029.43, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 48, "Pago_Mensual": 2230.36, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 64000.0, "Plazo_Meses": 48, "Pago_Mensual": 2571.99, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 74500.0, "Plazo_Meses": 48, "Pago_Mensual": 2993.96, "CAT": 37.0, "Tasa_Anual": 31.89},
-
-    # Plazo 36 Meses
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 36, "Pago_Mensual": 463.73, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 44000.0, "Plazo_Meses": 36, "Pago_Mensual": 2040.41, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 55500.0, "Plazo_Meses": 36, "Pago_Mensual": 2573.72, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 64500.0, "Plazo_Meses": 36, "Pago_Mensual": 2991.05, "CAT": 37.0, "Tasa_Anual": 31.89},
-
-    # Plazo 24 Meses
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 10000.0, "Plazo_Meses": 24, "Pago_Mensual": 595.77, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 34000.0, "Plazo_Meses": 24, "Pago_Mensual": 2025.62, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 43000.0, "Plazo_Meses": 24, "Pago_Mensual": 2561.81, "CAT": 37.0, "Tasa_Anual": 31.89},
-    {"Marca": "Mas Nomina (MN 4766)", "Monto": 50000.0, "Plazo_Meses": 24, "Pago_Mensual": 2978.83, "CAT": 37.0, "Tasa_Anual": 31.89},
-
-    # --------------------------------------------------------------------------
-    # MAS NÓMINA (MN 3772) - Tasa Anual 28.80%, CAT 32.9%
-    # --------------------------------------------------------------------------
-    # Plazo 54 Meses
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 10000.0, "Plazo_Meses": 54, "Pago_Mensual": 360.15, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 20000.0, "Plazo_Meses": 54, "Pago_Mensual": 720.31, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 30000.0, "Plazo_Meses": 54, "Pago_Mensual": 1080.46, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 40000.0, "Plazo_Meses": 54, "Pago_Mensual": 1440.62, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 56500.0, "Plazo_Meses": 54, "Pago_Mensual": 2034.87, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 71500.0, "Plazo_Meses": 54, "Pago_Mensual": 2575.10, "CAT": 32.9, "Tasa_Anual": 28.80},
-    {"Marca": "Mas Nomina (MN 3772)", "Monto": 83000.0, "Plazo_Meses": 54, "Pago_Mensual": 2989.25, "CAT": 32.9, "Tasa_Anual": 28.80},
-
-    # --------------------------------------------------------------------------
-    # OPCIPRES (OPC 4689) - Tasa Anual 25.68%, CAT 28.9%
-    # --------------------------------------------------------------------------
-    # Plazo 60 Meses
-    {"Marca": "Opcipres (OPC 4689)", "Monto": 75000.0, "Plazo_Meses": 60, "Pago_Mensual": 2416.78, "CAT": 28.9, "Tasa_Anual": 25.68},
-    {"Marca": "Opcipres (OPC 4689)", "Monto": 80000.0, "Plazo_Meses": 60, "Pago_Mensual": 2577.90, "CAT": 28.9, "Tasa_Anual": 25.68},
-    {"Marca": "Opcipres (OPC 4689)", "Monto": 93000.0, "Plazo_Meses": 60, "Pago_Mensual": 2996.81, "CAT": 28.9, "Tasa_Anual": 25.68},
-
-    # --------------------------------------------------------------------------
-    # CONSUBANCO (CSB 4707) - Tasa Anual 23.88%, CAT 26.7%
-    # --------------------------------------------------------------------------
-    # Plazo 60 Meses
-    {"Marca": "Consubanco (CSB 4707)", "Monto": 150000.0, "Plazo_Meses": 60, "Pago_Mensual": 4643.34, "CAT": 26.7, "Tasa_Anual": 23.88},
-    {"Marca": "Consubanco (CSB 4707)", "Monto": 160000.0, "Plazo_Meses": 60, "Pago_Mensual": 4952.89, "CAT": 26.7, "Tasa_Anual": 23.88},
-]
-
-df_base = pd.DataFrame(DATA_CREDITOS)
+ENLACES_PDF = {
+    "Mas Nomina (MN 4766)": {
+        "url": "https://drive.google.com/uc?export=download&id=17Z4j3lt8-WDJ9BVIQVeRilwqVqdzhlCX",
+        "CAT": 37.0,
+        "Tasa_Anual": 31.89
+    },
+    "Mas Nomina (MN 3772)": {
+        "url": "https://drive.google.com/uc?export=download&id=1lYTpq6vhwJh8xzwlwAXl4LG4tcrWeN65",
+        "CAT": 32.9,
+        "Tasa_Anual": 28.80
+    },
+    "Opcipres (OPC 4689)": {
+        "url": "https://drive.google.com/uc?export=download&id=1SqPnw8a94-3-aa5rgr-fF9CeEuT9iTcI",
+        "CAT": 28.9,
+        "Tasa_Anual": 25.68
+    },
+    "Consubanco (CSB 4707)": {
+        "url": "https://drive.google.com/uc?export=download&id=1D4bA086uIUNdA99ush5ljfPyOHiyR6Z7",
+        "CAT": 26.7,
+        "Tasa_Anual": 23.88
+    }
+}
 
 # ==============================================================================
-# CONTROLES Y FILTROS
+# FUNCIÓN DE EXTRACCIÓN DIRECTA DE TABLAS DESDE GOOGLE DRIVE
+# ==============================================================================
+@st.cache_data(ttl=86400) # Cachea los datos durante 24 horas para mantener velocidad
+def extraer_tablas_desde_drive():
+    registros = []
+    
+    for marca, info in ENLACES_PDF.items():
+        try:
+            response = requests.get(info["url"])
+            if response.status_code == 200:
+                pdf_file = io.BytesIO(response.content)
+                
+                with pdfplumber.open(pdf_file) as pdf:
+                    for page in pdf.pages:
+                        tables = page.extract_tables()
+                        for table in tables:
+                            for row in table:
+                                # Limpieza y extracción de columnas numéricas del PDF
+                                row_cleaned = [str(cell).strip() for cell in row if cell is not None]
+                                
+                                # Filtrar filas numéricas que contienen montos y pagos
+                                if len(row_cleaned) >= 3:
+                                    try:
+                                        monto_str = re.sub(r"[^\d.]", "", row_cleaned[0].replace(",", ""))
+                                        pago_str = re.sub(r"[^\d.]", "", row_cleaned[-1].replace(",", ""))
+                                        
+                                        monto = float(monto_str)
+                                        pago = float(pago_str)
+                                        
+                                        # Identificación básica de plazo (ejemplo: 60, 54, 48, 36, 24)
+                                        plazo = 60
+                                        for elem in row_cleaned:
+                                            if elem in ["60", "54", "48", "36", "24"]:
+                                                plazo = int(elem)
+                                                break
+                                                
+                                        if monto > 0 and pago > 0:
+                                            registros.append({
+                                                "Marca": marca,
+                                                "Monto": monto,
+                                                "Plazo_Meses": plazo,
+                                                "Pago_Mensual": pago,
+                                                "CAT": info["CAT"],
+                                                "Tasa_Anual": info["Tasa_Anual"]
+                                            })
+                                    except ValueError:
+                                        continue
+        except Exception as e:
+            st.error(f"Error al conectar con el PDF de {marca}: {e}")
+            
+    return pd.DataFrame(registros)
+
+# Cargar base de datos leyendo los PDF en tiempo real
+with st.spinner("Conectando y leyendo tablas oficiales desde Google Drive..."):
+    df_base = extraer_tablas_desde_drive()
+
+# ==============================================================================
+# PANEL LATERAL DE CONTROLES
 # ==============================================================================
 st.sidebar.header("Parámetros de Búsqueda")
 
-with st.sidebar.form(key="form_busqueda", clear_on_submit=False):
+with st.sidebar.form(key="search_form", clear_on_submit=False):
     capacidad_input = st.text_input(
         "Capacidad de crédito / Descuento Máximo ($):", 
-        value="3,000.00"
+        value="10,000.00"
     )
     
-    marcas_disponibles = ["Todas"] + list(df_base["Marca"].unique())
+    marcas_disponibles = ["Todas"] + list(ENLACES_PDF.keys())
     marca_seleccionada = st.selectbox("Filtrar Marca:", marcas_disponibles)
     incluir_iva = st.checkbox("Incluir IVA (16%) en Tasa Mensual", value=False)
     
-    btn_buscar = st.form_submit_button(label="🔍 Calcular Oferta", use_container_width=True)
+    btn_cotizar = st.form_submit_button(label="🔍 Calcular Oferta", use_container_width=True)
 
-# Limpieza estricta del valor ingresado
+# Limpieza de entrada
 def parse_monto_limpio(val_str):
     if not val_str:
         return None
@@ -105,36 +124,36 @@ def parse_monto_limpio(val_str):
 
 capacidad_num = parse_monto_limpio(capacidad_input)
 
-# CÁLCULO DE TASA MENSUAL (ÚNICO PERMITIDO: DIVIDIR TASA ANUAL ENTRE 12)
-if incluir_iva:
-    df_base["Tasa_Mostrar"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
-else:
-    df_base["Tasa_Mostrar"] = df_base["Tasa_Anual"] / 12.0
+# Cálculo exigido de tasa mensual (Tasa Anual / 12)
+if not df_base.empty:
+    if incluir_iva:
+        df_base["Tasa_Mostrar"] = (df_base["Tasa_Anual"] * 1.16) / 12.0
+    else:
+        df_base["Tasa_Mostrar"] = df_base["Tasa_Anual"] / 12.0
 
 # ==============================================================================
-# LÓGICA DE BÚSQUEDA Y MUESTRA DE RESULTADOS
+# LÓGICA DE BÚSQUEDA SOBRE LA EXTRACCIÓN EN VIVO
 # ==============================================================================
-if capacidad_num is not None:
+if capacidad_num is not None and not df_base.empty:
     st.subheader(f"Resultados para capacidad de pago máxima: **${capacidad_num:,.2f} mensuales**")
     
-    # 1. Filtrar únicamente las ofertas cuyos pagos sean menores o iguales a la capacidad ingresada
+    # 1. Filtrar filas con pago mensual menor o igual a la capacidad
     df_viables = df_base[df_base["Pago_Mensual"] <= capacidad_num].copy()
     
-    # 2. Filtrar por marca si el usuario seleccionó una específica
     if marca_seleccionada != "Todas":
         df_viables = df_viables[df_viables["Marca"] == marca_seleccionada]
         
     if df_viables.empty:
         st.warning("⚠️ No aplican opciones de crédito para la capacidad ingresada.")
     else:
-        # 3. Agrupar por Marca y Plazo para obtener la oferta del MÁXIMO MONTO financiable
+        # 2. Seleccionar el MÁXIMO MONTO financiable para cada Marca y Plazo
         idx_mejores = df_viables.groupby(["Marca", "Plazo_Meses"])["Monto"].idxmax()
         resultados = df_viables.loc[idx_mejores].copy()
 
-        # Ordenar los resultados por Tasa (descendente), Plazo (descendente) y Monto
+        # Ordenar por Tasa (descendente), Plazo (descendente) y Monto
         resultados = resultados.sort_values(by=["Tasa_Mostrar", "Plazo_Meses", "Monto"], ascending=[False, False, False])
 
-        # 4. Presentación en Tabla
+        # 3. Presentación en Tabla
         resultados_display = resultados.copy()
         resultados_display["Monto Ofertado"] = resultados_display["Monto"].apply(lambda x: f"${x:,.2f}")
         resultados_display["Descuento Mensual"] = resultados_display["Pago_Mensual"].apply(lambda x: f"${x:,.2f}")
@@ -148,7 +167,7 @@ if capacidad_num is not None:
         st.markdown("---")
         st.subheader("📌 Opciones Disponibles Agrupadas por Marca")
         
-        # 5. Presentación en Tarjetas
+        # 4. Tarjetas Informativas
         for marca, group in resultados.groupby("Marca", sort=False):
             st.markdown(f"### 🏷️ {marca}")
             
@@ -181,4 +200,4 @@ if capacidad_num is not None:
                 """
                 col_target.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.error("Por favor ingrese un monto de capacidad válido (ejemplo: 3000 o 3,000.00).")
+    st.error("Por favor ingrese un monto de capacidad válido (ejemplo: 10000 o 10,000.00).")
